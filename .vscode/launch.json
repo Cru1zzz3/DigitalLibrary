@@ -9,7 +9,7 @@
             "type": "go",
             "request": "launch",
             "mode": "auto",
-            "program": "${fileDirname}",
+            "program": "D:\\YandexDisk\\8\\MISPISIT Brzhezovskiy\\curs\\DigitalLibrary\\cmd\\main.go",
             "env": {},
             "args": []
         }
