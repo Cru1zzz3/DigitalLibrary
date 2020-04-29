@@ -1,0 +1,24 @@
+{{if or .NotRegistered .AuthError}}
+<h1>Login:</h1>
+<form method="POST">
+    <label>Nickname:</label><br />
+    <input type="text" name="Nickname"><br />
+
+    <label>Password:</label><br />
+    <input type="Password" name="Password"><br />
+    <input type="submit">
+</form>
+{{else}}
+<h1>Succsessfully login! Redirecting in 5 seconds...</h1>
+<meta http-equiv="Refresh" content="5; url=/" />
+{{end}}
+
+{{if .NotRegistered}}
+
+<h1>Error while login: You are not yet registered!</h1>
+<h1>You can register on <a href="/registration">this page!</a></h1>
+{{end}}
+
+{{ if .AuthError}}
+<h1>Check your login or password!</h1>
+{{end}}

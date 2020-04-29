@@ -1,2 +1,20 @@
 <h1>{{.PageTitle}}</h1>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
 <a href="/registration">Registration</a>
+<a href="/login">Login</a>
+
+<script>
+    $("search").keyup(function () {
+        txt = $("search").val();
+        $.post("url", { suggest: txt }, function (result) {
+            $("#results").html(result);
+        });
+    });
+</script>
+
+<div class="topnav">
+    <input type="text" name="search" id="search" placeholder="Search book..">
+    <section id="results"></section>
+</div>
