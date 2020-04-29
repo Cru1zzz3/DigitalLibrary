@@ -149,7 +149,7 @@ func main() {
 		}
 
 		loginPageData := loginPage{
-			PageTitle: "Login:",
+			PageTitle: " ",
 		}
 
 		tmpl, err := template.ParseFiles("../templates/login.html")

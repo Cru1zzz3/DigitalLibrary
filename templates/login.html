@@ -1,9 +1,40 @@
 <h1>{{.PageTitle}}</h1>
-<form method="POST">
-    <label>Nickname:</label><br />
-    <input type="text" name="Nickname"><br />
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 
-    <label>Password:</label><br />
-    <input type="Password" name="Password"><br />
-    <input type="submit">
-</form>
+
+
+<div class="container">
+    <div class="row">
+        <div class="col-3" style="visibility: hidden;">Здесь должна быть ваша реклама</div>
+        <div class="col-6" style="visibility: hidden;">Здесь должна быть ваша реклама</div>
+        <div class="col-3" style="visibility: hidden;">Здесь должна быть ваша реклама</div>
+    </div>
+
+    <div class="row">
+        <!-- Left coloumn -->
+        <div class="col-md-3"></div>
+
+        <!-- Center coloumn -->
+        <div class="col-md-6">
+            <form method="POST">
+                <div class="form-group">
+                    <label for="nickname">Nickname:</label>
+                    <input type="email" class="form-control" id="nickname" placeholder="Enter nickname">
+                    <small id="emailHelp" class="form-text text-muted"> You can undertext this :) </small>
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" class="form-control" id="password" placeholder="Password">
+                </div>
+                <div class="form-group form-check">
+                    <input type="checkbox" class="form-check-input" id="check">
+                    <label class="form-check-label" for="check">I'm agree with site policy</label>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit</button>
+            </form>
+        </div>
+        <!-- Right coloumn -->
+        <div class="col-md-3"></div>
+    </div>
+</div>
