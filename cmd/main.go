@@ -12,10 +12,18 @@ import (
 	"github.com/gorilla/mux"
 )
 
-//IndexPageData ...
-type IndexPageData struct {
-	PageTitle string
-}
+// var TemplatePath string
+
+// TemplatePath = "../template/"
+
+// func PrepareParseFiles(files []string) []string {
+// 	for file := range files {
+// 		file = append("TemplatePath", file)
+// 		file = append(file, ".html")
+// 	}
+
+// 	return files
+// }
 
 func main() {
 
@@ -45,20 +53,53 @@ func main() {
 	defer Conn.Close()
 
 	r.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		//fmt.Fprintln(w, "Welcome to digital library web site!")
 
-		tmpl, err := template.ParseFiles("../templates/index.html")
-		if err != nil {
-			log.Fatal("Error in parsing index template", err)
+		//var templates = template.Must(template.ParseGlob("../templates/*"))
+
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
 		}
 
-		indexData := IndexPageData{
-			PageTitle: "Welcome to main page of DigitalLibrary!",
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Fatal(err)
 		}
 
-		err = tmpl.Execute(w, indexData)
+		err = t.ExecuteTemplate(w, "index", nil)
 		if err != nil {
-			log.Fatal("Error in execute index template", err)
+			log.Fatal("Error in execute index template ", err)
+		}
+
+	})
+
+	r.HandleFunc("/search", func(w http.ResponseWriter, r *http.Request) {
+
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+			"../templates/search.html",
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		search := r.FormValue("search")
+
+		//Get result collection from search
+		searchResults, err := db.SelectBook(w, search)
+		if err != nil {
+			log.Fatal("Error in search book query", err)
+		}
+
+		// Print result collection
+		//log.Println(searchResults.NameBook, searchResults.NameAuthor)
+
+		err = t.ExecuteTemplate(w, "index", searchResults)
+		if err != nil {
+			log.Fatal("Error search template execute", err)
 		}
 
 	})
@@ -79,26 +120,24 @@ func main() {
 			Nickname string
 		}
 
-		//fmt.Fprintln(w, "Registration page!")
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+			"../templates/registration.html",
+		}
 
-		tmpl, err := template.ParseFiles("../templates/registration.html")
+		t, err := template.ParseFiles(files...)
 		if err != nil {
-			log.Fatal("Error in parsing register template", err)
+			log.Fatal(err)
 		}
 
 		if r.Method != http.MethodPost {
-			tmpl.Execute(w, nil)
+			err = t.ExecuteTemplate(w, "index", SuccessfullyRegistration{})
+			if err != nil {
+				log.Fatal("Error in execute registration template", err)
+			}
 			return // if get it will not proceed to get values from form
 		}
-
-		// tmpl := template.Must(template.ParseFiles("../register.html"))
-
-		// data := RegistrationPageData{
-		// 	PageTitle: "This is registration page",
-		// 	Nickname:  "Cru1zzz3",
-		// 	Email:     "mailru",
-		// 	IDPassword:  "admin",
-		// }
 
 		registrationData := RegistrationPageData{
 			Nickname: r.FormValue("Nickname"),
@@ -111,7 +150,7 @@ func main() {
 			Nickname: registrationData.Nickname,
 		}
 
-		err = tmpl.Execute(w, succ)
+		err = t.ExecuteTemplate(w, "index", succ)
 		if err != nil {
 			log.Fatal("Error in success template execute", err)
 		}
@@ -148,21 +187,27 @@ func main() {
 			AuthError     bool
 		}
 
-		loginPageData := loginPage{
-			PageTitle: " ",
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+			"../templates/login.html",
 		}
 
-		tmpl, err := template.ParseFiles("../templates/login.html")
+		t, err := template.ParseFiles(files...)
 		if err != nil {
-			log.Fatal("Error in parse login template", err)
+			log.Fatal(err)
 		}
+
+		loginPageData := loginPage{}
 
 		// Will continue if submit button will be pressed!
 		if r.Method != http.MethodPost {
-			err = tmpl.Execute(w, loginPageData)
+
+			err = t.ExecuteTemplate(w, "index", loginPageData)
 			if err != nil {
 				log.Fatal("Error in execute login template", err)
 			}
+
 			return
 		}
 
@@ -171,22 +216,16 @@ func main() {
 			Password: r.FormValue("Password"),
 		}
 
-		checkTmpl, err := template.ParseFiles("../templates/checklogin.html")
-		if err != nil {
-			log.Fatal("Error in parse login template", err)
-		}
-
 		registered, hashFromDB, err := db.LoginUser(loginPageData.Nickname)
 		if err != nil {
 			log.Fatal("Error in check user login", err)
 		}
 		if !registered {
-			err = checkTmpl.Execute(w, LoginErrors{true, false})
+			err = t.ExecuteTemplate(w, "index", LoginErrors{true, false})
 			if err != nil {
 				log.Fatal("Error in user not registered message", err)
 			}
 		} else {
-			// TODO: Compare pass and hash
 			if err != nil {
 				log.Fatal("Error in main.go checkTmpl.Execute", err)
 			}
@@ -194,11 +233,19 @@ func main() {
 			err := bcrypt.CompareHashAndPassword([]byte(hashFromDB), []byte(loginPageData.Password))
 			if err != nil {
 				log.Println("Error in compare hashing", err)
-				err = checkTmpl.Execute(w, LoginErrors{false, true})
+
+				err = t.ExecuteTemplate(w, "index", LoginErrors{false, true})
+				if err != nil {
+					log.Fatal("Error in user not registered message", err)
+				}
+
 				return
 			}
 
-			err = checkTmpl.Execute(w, LoginErrors{false, false})
+			err = t.ExecuteTemplate(w, "index", LoginErrors{false, false})
+			if err != nil {
+				log.Fatal("Error in user non error registered message", err)
+			}
 
 		}
 
@@ -216,13 +263,13 @@ func main() {
 
 }
 
-//HashPassword get hash of the inputted IDPassword
+//HashPassword get hash of the inputted Password
 func HashPassword(Password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(Password), 14)
 	return string(bytes), err
 }
 
-//CheckPasswordHash checks IDPassword with corresponding hash and returns true or false
+//CheckPasswordHash checks Password with corresponding hash and returns true or false
 func CheckPasswordHash(Password, Hash string) bool {
 	err := bcrypt.CompareHashAndPassword([]byte(Hash), []byte(Password))
 	return err == nil

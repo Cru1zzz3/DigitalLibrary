@@ -1,17 +1,24 @@
+{{define "title"}}Registration page{{end}}
+
+{{define "content"}}
 {{if .Success}}
-<h1>Thanks for your registration,{{.Nickname}}!</h1>
 <a href="/">Back to main page</a>
 {{else}}
-<h1>Registration form</h1>
 <form method="POST">
-    <label>Nickname:</label><br />
-    <input type="text" name="Nickname"><br />
+    <div class="form-group">
+        <label>Nickname:</label><br />
+        <input type="text" class="form-control" name="Nickname" placeholder="Enter nickname"><br />
+    </div>
 
-    <label>Email:</label><br />
-    <input type="text" name="Email"><br />
-
-    <label>Password:</label><br />
-    <input type="Password" name="Password"><br />
-    <input type="submit">
+    <div class="form-group">
+        <label>Email:</label><br />
+        <input type="text" class="form-control" name="Email"><br />
+    </div>
+    <div class="form-group">
+        <label>Password:</label><br />
+        <input type="Password" class="form-control" name="Password" placeholder="Password"><br />
+    </div>
+    <input type="submit" class="btn btn-primary">
 </form>
+{{end}}
 {{end}}

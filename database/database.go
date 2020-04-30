@@ -189,14 +189,12 @@ func SelectReader(w http.ResponseWriter) error {
 }
 
 // SelectBook TODO: Finish search via searchbar
-func SelectBook(w http.ResponseWriter) error {
-	search := "forest"
-	tsql := fmt.Sprintf(`Select NameBook,NameAuthor,NameGenre 
-	FROM Books,BookAuthor,Authors,Genres 
+func SelectBook(w http.ResponseWriter, search string) (SearchStruct, error) {
+	tsql := fmt.Sprintf(`Select NameBook,NameAuthor 
+	FROM Books,BookAuthor,Authors 
 	WHERE Books.IDBook = BookAuthor.IDBook
 	AND BookAuthor.IDBook = Authors.IDAuthor
-	AND Books.IDGenre = Genres.IDGenre 
-	AND (NameBook LIKE '%%%s%%' OR Authors.NameAuthor LIKE  '%%%s%%' OR NameGenre LIKE  '%%%s%%');`, search, search, search)
+	AND (NameBook LIKE '%%%s%%' OR Authors.NameAuthor LIKE  '%%%s%%');`, search, search)
 	rows, err := Conn.Query(tsql)
 	if err != nil {
 		log.Fatal("Error select row: " + err.Error())
@@ -205,19 +203,28 @@ func SelectBook(w http.ResponseWriter) error {
 
 	var count int
 
+	searchResults := SearchStruct{}
+
 	for rows.Next() {
-		var NameBook, NameAuthor, NameGenre string
+		var NameBookScan, NameAuthorScan string
 		// Get values from row.
-		err := rows.Scan(&NameBook, &NameAuthor, &NameGenre)
+		err := rows.Scan(&NameBookScan, &NameAuthorScan)
 		if err != nil {
 			log.Fatal("Error scan row: " + err.Error())
 		}
 
-		fmt.Fprintf(w, "NameBook: %s, NameAuthor: %s, NameGenre: %s,\n", NameBook, NameAuthor, NameGenre)
+		instanceBook := Book{
+			NameBook:   NameBookScan,
+			NameAuthor: NameAuthorScan,
+		}
+
+		searchResults.Books = append(searchResults.Books, instanceBook)
+
+		//fmt.Fprintf(w, "NameBook: %s, NameAuthor: %s\n", NameBook, NameAuthor)
 		count++
 	}
 
-	return nil
+	return searchResults, nil
 }
 
 // db, err := db.Query("select * from dbo.Formulars")
