@@ -1,9 +1,7 @@
 {{define "title"}}Registration page{{end}}
 
 {{define "content"}}
-{{if .Success}}
-<a href="/">Back to main page</a>
-{{else}}
+
 <form method="POST">
     <div class="form-group">
         <label>Nickname:</label><br />
@@ -18,7 +16,11 @@
         <label>Password:</label><br />
         <input type="Password" class="form-control" name="Password" placeholder="Password"><br />
     </div>
+    <div class="form-group form-check">
+        <input type="checkbox" class="form-check-input" id="check">
+        <label class="form-check-label" for="check">I'm agree with site policy</label>
+    </div>
     <input type="submit" class="btn btn-primary">
 </form>
-{{end}}
+
 {{end}}

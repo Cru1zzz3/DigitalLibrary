@@ -1,24 +1,38 @@
-{{if or .NotRegistered .AuthError}}
-<h1>Login:</h1>
-<form method="POST">
-    <label>Nickname:</label><br />
-    <input type="text" name="Nickname"><br />
+{{define "title"}}Login error{{end}}
 
-    <label>Password:</label><br />
-    <input type="Password" name="Password"><br />
-    <input type="submit">
+{{define "content"}}
+
+{{if or .LoginError.NotRegistered .LoginError.AuthError}}
+<form method="POST" action="/login">
+    <div class="form-group">
+        <label for="nickname">Nickname:</label>
+        <input type="text" class="form-control" id="nickname" placeholder="Enter nickname">
+        <small id="nickname" class="form-text text-muted"> You can undertext this :) </small>
+    </div>
+    <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" class="form-control" id="password" placeholder="Password">
+    </div>
+    {{if .LoginError.NotRegistered}}
+    {{template "notregistered" .}}
+    {{end}}
+
+    {{ if .LoginError.AuthError}}
+    {{template "autherror" . }}
+    {{end}}
+    <button type="submit" class="btn btn-primary">Submit</button>
 </form>
-{{else}}
-<h1>Succsessfully login! Redirecting in 5 seconds...</h1>
-<meta http-equiv="Refresh" content="5; url=/" />
 {{end}}
 
-{{if .NotRegistered}}
-
-<h1>Error while login: You are not yet registered!</h1>
-<h1>You can register on <a href="/registration">this page!</a></h1>
 {{end}}
 
-{{ if .AuthError}}
-<h1>Check your login or password!</h1>
+{{define "notregistered"}}
+<small id="NotRegistered" class="form-text text-muted"> Error while login: You are not yet registered!</small>
+<small id="YouCanRegister" class="form-text text-muted">You can register on <a href="/registration">this page!</a>
+</small>
+{{end}}
+
+
+{{define "autherror"}}
+<small id="CheckLoginOrPassword" class="form-text text-muted">Check your login or password!</small>
 {{end}}

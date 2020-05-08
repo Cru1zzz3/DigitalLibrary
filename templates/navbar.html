@@ -1,7 +1,13 @@
 {{define "head"}}
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+
+
 {{end}}
 
 {{define "navbar"}}
@@ -16,6 +22,23 @@
 
     <div class="collapse navbar-collapse" id="navbarSupportedContent">
         <ul class="navbar-nav mr-auto">
+
+            {{ if .Authenticated}}
+
+            <!-- Hi, username -->
+            <li class="nav-item active">
+                <a class="nav-link" href=""> {{ if .Nickname}} Hi, {{ .Nickname }} {{end}}
+                    <span class="sr-only">(current)</span></a>
+            </li>
+
+
+            <!-- Logout -->
+            <li class="nav-item active">
+                <a class="nav-link" href="/logout"> Logout <span class="sr-only">(current)</span></a>
+            </li>
+
+            {{else}}
+
             <!-- Login -->
             <li class="nav-item active">
                 <a class="nav-link" href="/login">Login <span class="sr-only">(current)</span></a>
@@ -25,20 +48,26 @@
             <li class="nav-item active">
                 <a class="nav-link" href="/registration">Registration <span class="sr-only">(current)</span></a>
             </li>
+
+            {{end}}
+
+
+            <!-- Genres dropdown -->
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
                     aria-haspopup="true" aria-expanded="false">
-                    Dropdown
+                    Genres
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
-                    <a class="dropdown-item" href="#">Action</a>
-                    <a class="dropdown-item" href="#">Another action</a>
+
+                    <a class="dropdown-item" href="#"></a>
                     <div class="dropdown-divider"></div>
                     <a class="dropdown-item" href="#">Something else here</a>
                 </div>
             </li>
+
             <li class="nav-item">
-                <a class="nav-link disabled" href="#">Disabled</a>
+                <a class="nav-link" href="/partnership">Become a partner!</a>
             </li>
         </ul>
 

@@ -69,10 +69,10 @@
         </tr>
     </thead>
     <tbody>
-        {{ range .Books }}
+        {{ range .SearchResults.Books }}
         <tr>
-            <td>{{ .NameBook }}</td>
-            <td>{{ .NameAuthor }}</td>
+            <td><a href="/books/{{.NameBook}}">{{ .NameBook }} </a> </td>
+            <td><a href="/authors/{{.NameAuthor}}">{{ .NameAuthor }} </a></td>
         </tr>
         {{end}}
     </tbody>

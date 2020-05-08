@@ -7,6 +7,8 @@ type SearchStruct struct {
 
 //Book contain NameBook and NameAuthor
 type Book struct {
-	NameBook   string
-	NameAuthor string
+	NameBook     string
+	DescribeBook string
+	NameAuthor   string
+	NameGenre    string
 }

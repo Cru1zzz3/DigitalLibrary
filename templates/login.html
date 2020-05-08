@@ -9,17 +9,13 @@
 {{ define "content"}}
 <form method="POST">
     <div class="form-group">
-        <label for="nickname">Nickname:</label>
-        <input type="text" class="form-control" id="nickname" placeholder="Enter nickname">
-        <small id="nickname" class="form-text text-muted"> You can undertext this :) </small>
+        <label for="Nickname">Nickname:</label>
+        <input type="text" class="form-control" id="Nickname" name="Nickname" placeholder="Enter nickname">
+        <small class="form-text text-muted"> You can undertext this :) </small>
     </div>
     <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" class="form-control" id="password" placeholder="Password">
-    </div>
-    <div class="form-group form-check">
-        <input type="checkbox" class="form-check-input" id="check">
-        <label class="form-check-label" for="check">I'm agree with site policy</label>
+        <label for="Password">Password</label>
+        <input type="password" class="form-control" id="Password" name="Password" placeholder="Password">
     </div>
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>

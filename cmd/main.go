@@ -7,9 +7,10 @@ import (
 	"net/http"
 
 	db "github.com/Cru1zzz3/DigitalLibrary/database"
-	"golang.org/x/crypto/bcrypt"
-
+	mail "github.com/Cru1zzz3/DigitalLibrary/mailing"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // var TemplatePath string
@@ -24,6 +25,30 @@ import (
 
 // 	return files
 // }
+var (
+	key   = []byte("super-secret-key")
+	store = sessions.NewCookieStore(key)
+)
+
+type Data struct {
+	Authenticated      bool
+	Nickname           string
+	LoginError         LoginErrors
+	SearchResults      db.SearchStruct
+	RegistrationResult SuccessfullyRegistration
+	Other              interface{}
+}
+
+//SuccessfullyRegistration ...
+type SuccessfullyRegistration struct {
+	Success  bool
+	Nickname string
+}
+
+type LoginErrors struct {
+	NotRegistered bool
+	AuthError     bool
+}
 
 func main() {
 
@@ -36,14 +61,6 @@ func main() {
 			log.Fatal("Can's select Reader from DB")
 		}
 
-	})
-
-	r.HandleFunc("/books/{title}/page/{page}", func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		title := vars["title"]
-		page := vars["page"]
-
-		fmt.Fprintf(w, "You've requested the book: %s on page %s\n", title, page)
 	})
 
 	Conn, err := db.ConnectToDB()
@@ -66,9 +83,64 @@ func main() {
 			log.Fatal(err)
 		}
 
-		err = t.ExecuteTemplate(w, "index", nil)
+		session, _ := store.Get(r, "cookie-name")
+
+		// Check if user is authenticated
+		if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+			// If not auth
+
+			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r)})
+			if err != nil {
+				log.Fatal("Error in execute index template ", err)
+			}
+
+			return
+		}
+
+		// If auth successfull
+
+		err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r)})
 		if err != nil {
 			log.Fatal("Error in execute index template ", err)
+		}
+
+	})
+
+	r.HandleFunc("/partnership", func(w http.ResponseWriter, r *http.Request) {
+
+		type Partnership struct {
+			Sended bool
+		}
+
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+			"../templates/partnership.html",
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		if r.Method != http.MethodPost {
+			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r)})
+			if err != nil {
+				log.Fatal("Error in execute partnership template", err)
+			}
+			return // if get it will not proceed to get values from form
+		}
+
+		recevier := r.FormValue("Email")
+
+		err = mail.SendMail(recevier)
+		if err != nil {
+			log.Fatal("Error in sending mail during partnership page")
+		}
+
+		err = t.ExecuteTemplate(w, "index", nil)
+		if err != nil {
+			log.Fatal("Error in execute partnership send mail template", err)
 		}
 
 	})
@@ -97,11 +169,40 @@ func main() {
 		// Print result collection
 		//log.Println(searchResults.NameBook, searchResults.NameAuthor)
 
-		err = t.ExecuteTemplate(w, "index", searchResults)
+		err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), SearchResults: searchResults})
 		if err != nil {
 			log.Fatal("Error search template execute", err)
 		}
 
+	})
+
+	r.HandleFunc("/books/{namebook}", func(w http.ResponseWriter, r *http.Request) {
+
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		vars := mux.Vars(r)
+		namebook := vars["namebook"]
+
+		searchResults, err := db.AboutBook(w, namebook)
+		if err != nil {
+			log.Fatal("Error in search info about book query", err)
+		}
+
+		err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), SearchResults: searchResults})
+		if err != nil {
+			log.Fatal("Error search template execute", err)
+		}
+
+		fmt.Fprintf(w, "You've requested the book: %s\n", namebook)
+		fmt.Fprintf(w, "Your result: %s\n", searchResults)
 	})
 
 	r.HandleFunc("/registration", func(w http.ResponseWriter, r *http.Request) {
@@ -112,12 +213,6 @@ func main() {
 			Email    string
 			Password string
 			Hash     string
-		}
-
-		//SuccessfullyRegistration ...
-		type SuccessfullyRegistration struct {
-			Success  bool
-			Nickname string
 		}
 
 		files := []string{
@@ -132,10 +227,11 @@ func main() {
 		}
 
 		if r.Method != http.MethodPost {
-			err = t.ExecuteTemplate(w, "index", SuccessfullyRegistration{})
+			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), RegistrationResult: SuccessfullyRegistration{Success: false}})
 			if err != nil {
 				log.Fatal("Error in execute registration template", err)
 			}
+
 			return // if get it will not proceed to get values from form
 		}
 
@@ -145,14 +241,9 @@ func main() {
 			Password: r.FormValue("Password"),
 		}
 
-		succ := SuccessfullyRegistration{
-			Success:  true,
-			Nickname: registrationData.Nickname,
-		}
-
-		err = t.ExecuteTemplate(w, "index", succ)
+		err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), RegistrationResult: SuccessfullyRegistration{Success: true}})
 		if err != nil {
-			log.Fatal("Error in success template execute", err)
+			log.Fatal("Error in execute registration template", err)
 		}
 
 		hash, _ := HashPassword(registrationData.Password)
@@ -173,6 +264,31 @@ func main() {
 
 	})
 
+	r.HandleFunc("/logout", func(w http.ResponseWriter, r *http.Request) {
+
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		session, _ := store.Get(r, "cookie-name")
+
+		// Revoke users authentication
+		session.Values["authenticated"] = false
+		session.Save(r, w)
+
+		err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r)})
+		if err != nil {
+			log.Fatal("Error search template execute", err)
+		}
+
+	})
+
 	r.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
 
 		type loginPage struct {
@@ -180,11 +296,6 @@ func main() {
 			Nickname  string
 			Password  string
 			Hash      string
-		}
-
-		type LoginErrors struct {
-			NotRegistered bool
-			AuthError     bool
 		}
 
 		files := []string{
@@ -203,9 +314,9 @@ func main() {
 		// Will continue if submit button will be pressed!
 		if r.Method != http.MethodPost {
 
-			err = t.ExecuteTemplate(w, "index", loginPageData)
+			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r)})
 			if err != nil {
-				log.Fatal("Error in execute login template", err)
+				log.Fatal("Error search template execute", err)
 			}
 
 			return
@@ -216,25 +327,38 @@ func main() {
 			Password: r.FormValue("Password"),
 		}
 
+		// Get cookie for current session
+		session, _ := store.Get(r, "cookie-name")
+
 		registered, hashFromDB, err := db.LoginUser(loginPageData.Nickname)
 		if err != nil {
 			log.Fatal("Error in check user login", err)
 		}
+
+		files = []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+			"../templates/checklogin.html",
+		}
+
+		t, err = template.ParseFiles(files...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
 		if !registered {
-			err = t.ExecuteTemplate(w, "index", LoginErrors{true, false})
+
+			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), LoginError: LoginErrors{true, false}})
 			if err != nil {
 				log.Fatal("Error in user not registered message", err)
 			}
 		} else {
-			if err != nil {
-				log.Fatal("Error in main.go checkTmpl.Execute", err)
-			}
 
-			err := bcrypt.CompareHashAndPassword([]byte(hashFromDB), []byte(loginPageData.Password))
+			err = bcrypt.CompareHashAndPassword([]byte(hashFromDB), []byte(loginPageData.Password))
 			if err != nil {
 				log.Println("Error in compare hashing", err)
 
-				err = t.ExecuteTemplate(w, "index", LoginErrors{false, true})
+				err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), LoginError: LoginErrors{false, true}})
 				if err != nil {
 					log.Fatal("Error in user not registered message", err)
 				}
@@ -242,10 +366,17 @@ func main() {
 				return
 			}
 
-			err = t.ExecuteTemplate(w, "index", LoginErrors{false, false})
+			// Save cookie if user successfully logged in
+			session.Values["authenticated"] = true
+			session.Values["nickname"] = loginPageData.Nickname
+			session.Save(r, w)
+
+			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), LoginError: LoginErrors{false, false}})
 			if err != nil {
 				log.Fatal("Error in user non error registered message", err)
 			}
+
+			http.Redirect(w, r, "/", http.StatusSeeOther)
 
 		}
 
@@ -259,7 +390,31 @@ func main() {
 	// fs := http.FileServer(http.Dir("static/")) // Directory where will be FileServer
 	// http.Handle("/static/", http.StripPrefix("/static", fs))
 
+	r.PathPrefix("/static/").Handler(http.StripPrefix("/static/", http.FileServer(http.Dir("../static/"))))
+
 	http.ListenAndServe(":80", r)
+
+}
+
+func GetNickname(r *http.Request) string {
+	session, _ := store.Get(r, "cookie-name")
+
+	if session.Values["nickname"] != nil {
+		return session.Values["nickname"].(string)
+	}
+	return ""
+
+}
+
+func CheckIfLogin(r *http.Request) bool {
+	session, _ := store.Get(r, "cookie-name")
+
+	// Check users authentication
+	if session.Values["authenticated"] == false {
+		return false
+	} else {
+		return true
+	}
 
 }
 

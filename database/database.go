@@ -13,7 +13,8 @@ import (
 	_ "github.com/denisenkom/go-mssqldb"
 )
 
-var server = "DESKTOP-OBVOF9A"
+//var pc = "DESKTOP-OBVOF9A"
+//var laptop = "DESKTOP-EEEPFL6"
 var port = "1433"
 var user = "user"
 var password = "user"
@@ -28,7 +29,7 @@ func ConnectToDB() (*sql.DB, error) {
 	//conn, err := sql.Open("sqlserver", connString)
 
 	var err error
-	Conn, err = sql.Open("sqlserver", "sqlserver://user:user@DESKTOP-OBVOF9A?database=DigitalLibrary")
+	Conn, err = sql.Open("sqlserver", "sqlserver://user:user@DESKTOP-EEEPFL6?database=DigitalLibrary")
 	if err != nil {
 		log.Println("Error creating connection pool: " + err.Error())
 		return nil, err
@@ -188,7 +189,7 @@ func SelectReader(w http.ResponseWriter) error {
 	return nil
 }
 
-// SelectBook TODO: Finish search via searchbar
+// SelectBook find name of book or author
 func SelectBook(w http.ResponseWriter, search string) (SearchStruct, error) {
 	tsql := fmt.Sprintf(`Select NameBook,NameAuthor 
 	FROM Books,BookAuthor,Authors 
@@ -216,6 +217,53 @@ func SelectBook(w http.ResponseWriter, search string) (SearchStruct, error) {
 		instanceBook := Book{
 			NameBook:   NameBookScan,
 			NameAuthor: NameAuthorScan,
+		}
+
+		searchResults.Books = append(searchResults.Books, instanceBook)
+
+		//fmt.Fprintf(w, "NameBook: %s, NameAuthor: %s\n", NameBook, NameAuthor)
+		count++
+	}
+
+	return searchResults, nil
+}
+
+// TODO: Fill dropdown with existing genres
+// func GetGenres(w http.ResponseWriter) (SearchStruct, error) {
+// 	return SearchStruct, nil
+// }
+
+func AboutBook(w http.ResponseWriter, search string) (SearchStruct, error) {
+	tsql := fmt.Sprintf(`Select NameBook, DescribeBook, NameAuthor, NameGenre
+	FROM Books,BookAuthor,Authors,Genres 
+	WHERE Books.IDBook = BookAuthor.IDBook
+	AND BookAuthor.IDBook = Authors.IDAuthor
+	AND Genres.IDGenre = Books.IDGenre
+	AND NameBook = '%s';`, search)
+
+	rows, err := Conn.Query(tsql)
+	if err != nil {
+		log.Fatal("Error select row: " + err.Error())
+	}
+	defer rows.Close()
+
+	var count int
+
+	searchResults := SearchStruct{}
+
+	for rows.Next() {
+		var NameBookScan, DescribeBookScan, NameAuthorScan, NameGenreScan string
+		// Get values from row.
+		err := rows.Scan(&NameBookScan, &DescribeBookScan, &NameAuthorScan, &NameGenreScan)
+		if err != nil {
+			log.Fatal("Error scan row: " + err.Error())
+		}
+
+		instanceBook := Book{
+			NameBook:     NameBookScan,
+			DescribeBook: DescribeBookScan,
+			NameAuthor:   NameAuthorScan,
+			NameGenre:    NameGenreScan,
 		}
 
 		searchResults.Books = append(searchResults.Books, instanceBook)
