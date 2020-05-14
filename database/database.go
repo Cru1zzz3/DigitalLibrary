@@ -163,39 +163,17 @@ func InsertReader(Login string, Name string, Surname string, Age int) error {
 	return nil
 }
 
-// SelectReader executes select query on Readers table
-func SelectReader(w http.ResponseWriter) error {
-	tsql := fmt.Sprintf("SELECT * FROM Readers;")
-	rows, err := Conn.Query(tsql)
-	if err != nil {
-		log.Fatal("Error select row: " + err.Error())
-	}
-	defer rows.Close()
-	var count int
-
-	for rows.Next() {
-		var IDReader, Age int
-		var Login, Name, Surname string
-		// Get values from row.
-		err := rows.Scan(&IDReader, &Login, &Name, &Surname, &Age)
-		if err != nil {
-			log.Fatal("Error scan row: " + err.Error())
-		}
-
-		fmt.Fprintf(w, "ID: %d, Login: %s, Name: %s,Surname %s,Age: %d,\n", IDReader, Login, Name, Surname, Age)
-		count++
-	}
-
-	return nil
-}
-
 // SelectBook find name of book or author
 func SelectBook(w http.ResponseWriter, search string) (SearchStruct, error) {
 	tsql := fmt.Sprintf(`Select NameBook,NameAuthor 
-	FROM Books,BookAuthor,Authors 
+	FROM Books,BookAuthor,Authors, Genres 
 	WHERE Books.IDBook = BookAuthor.IDBook
 	AND BookAuthor.IDBook = Authors.IDAuthor
-	AND (NameBook LIKE '%%%s%%' OR Authors.NameAuthor LIKE  '%%%s%%');`, search, search)
+	AND Genres.IDGenre = Books.IDGenre
+	AND (NameBook
+		 LIKE '%%%s%%' OR 
+		 Authors.NameAuthor LIKE  '%%%s%%'
+		  OR Genres.NameGenre LIKE '%%%s%%' );`, search, search, search)
 	rows, err := Conn.Query(tsql)
 	if err != nil {
 		log.Fatal("Error select row: " + err.Error())
@@ -229,24 +207,219 @@ func SelectBook(w http.ResponseWriter, search string) (SearchStruct, error) {
 }
 
 // TODO: Fill dropdown with existing genres
-// func GetGenres(w http.ResponseWriter) (SearchStruct, error) {
-// 	return SearchStruct, nil
-// }
+func GetGenres(w http.ResponseWriter) []string {
 
-func AboutBook(w http.ResponseWriter, search string) (SearchStruct, error) {
-	tsql := fmt.Sprintf(`Select NameBook, DescribeBook, NameAuthor, NameGenre
-	FROM Books,BookAuthor,Authors,Genres 
-	WHERE Books.IDBook = BookAuthor.IDBook
-	AND BookAuthor.IDBook = Authors.IDAuthor
-	AND Genres.IDGenre = Books.IDGenre
-	AND NameBook = '%s';`, search)
+	ctx := context.Background()
+	err := Conn.PingContext(ctx)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	log.Printf("Connected!")
 
+	rows, err := Conn.QueryContext(ctx, "GetTopGenres")
+	if err != nil {
+		log.Printf("Error in get top genres querycontext!")
+		log.Fatal(err.Error())
+	}
+	var TopGenresSlice []string
+
+	TopGenresSlice = nil
+
+	// tsql := fmt.Sprintf("SELECT TOP 5 NameGenre FROM Genres;")
+	// rows, err := Conn.Query(tsql)
+	// if err != nil {
+	// 	log.Fatal("Error select top 5 genres row: " + err.Error())
+	// }
+	// defer rows.Close()
+
+	for rows.Next() {
+		var NameGenre string
+		// Get values from row.
+		err := rows.Scan(&NameGenre)
+		if err != nil {
+			log.Fatal("Error scan namegenre row: " + err.Error())
+		}
+
+		TopGenresSlice = append(TopGenresSlice, NameGenre)
+		//fmt.Fprintf(w, "ID: %d, Login: %s, Name: %s,Surname %s,Age: %d,\n", IDReader, Login, Name, Surname, Age)
+
+	}
+	return TopGenresSlice
+}
+
+// SelectReader executes select query on Readers table
+func SelectReader(w http.ResponseWriter) error {
+
+	tsql := fmt.Sprintf("SELECT * FROM Readers;")
 	rows, err := Conn.Query(tsql)
 	if err != nil {
 		log.Fatal("Error select row: " + err.Error())
 	}
 	defer rows.Close()
+	var count int
 
+	for rows.Next() {
+		var IDReader, Age int
+		var Login, Name, Surname string
+		// Get values from row.
+		err := rows.Scan(&IDReader, &Login, &Name, &Surname, &Age)
+		if err != nil {
+			log.Fatal("Error scan row: " + err.Error())
+		}
+
+		fmt.Fprintf(w, "ID: %d, Login: %s, Name: %s,Surname %s,Age: %d,\n", IDReader, Login, Name, Surname, Age)
+		count++
+	}
+
+	return nil
+}
+
+func GetAllGenres(w http.ResponseWriter) SearchStruct {
+
+	ctx := context.Background()
+	err := Conn.PingContext(ctx)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	log.Printf("Connected!")
+
+	rows, err := Conn.QueryContext(ctx, "GetAllGenres")
+	if err != nil {
+		log.Printf("Error in get top genres querycontext!")
+		log.Fatal(err.Error())
+	}
+
+	// tsql := fmt.Sprintf("SELECT TOP 5 NameGenre FROM Genres;")
+	// rows, err := Conn.Query(tsql)
+	// if err != nil {
+	// 	log.Fatal("Error select top 5 genres row: " + err.Error())
+	// }
+	// defer rows.Close()
+
+	searchResult := SearchStruct{}
+
+	for rows.Next() {
+		var NameGenreScan, DescribeGenreScan string
+		// Get values from row.
+		err := rows.Scan(&NameGenreScan, &DescribeGenreScan)
+		if err != nil {
+			log.Fatal("Error scan namegenre describegenre row: " + err.Error())
+		}
+
+		currentGenre := Genre{
+			NameGenre:     NameGenreScan,
+			DescribeGenre: DescribeGenreScan,
+		}
+
+		searchResult.Genres = append(searchResult.Genres, currentGenre)
+		//fmt.Fprintf(w, "ID: %d, Login: %s, Name: %s,Surname %s,Age: %d,\n", IDReader, Login, Name, Surname, Age)
+
+	}
+	return searchResult
+}
+
+func AboutGenre(w http.ResponseWriter, genre string) (SearchStruct, error) {
+
+	ctx := context.Background()
+	err := Conn.PingContext(ctx)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	log.Printf("Connected!")
+
+	rows, err := Conn.QueryContext(ctx, "GetGenre", sql.Named("NameGenre", sql.Out{Dest: &genre}))
+	if err != nil {
+		log.Printf("Error in get genre  querycontext!")
+		log.Fatal(err.Error())
+	}
+	var count int
+
+	searchResults := SearchStruct{}
+
+	for rows.Next() {
+		var NameGenreScan, DescribeGenreScan, NameBookScan string
+		// Get values from row.
+		err := rows.Scan(&NameGenreScan, &DescribeGenreScan, &NameBookScan)
+		if err != nil {
+			log.Fatal("Error scan row: " + err.Error())
+		}
+
+		instanceGenre := Genre{
+			NameGenre:     NameGenreScan,
+			DescribeGenre: DescribeGenreScan,
+		}
+
+		searchResults, err = SelectBook(w, NameGenreScan)
+
+		searchResults.Genres = append(searchResults.Genres, instanceGenre)
+
+		//fmt.Fprintf(w, "NameBook: %s, NameAuthor: %s\n", NameBook, NameAuthor)
+		count++
+	}
+
+	return searchResults, nil
+}
+
+func AboutAuthor(w http.ResponseWriter, author string) (SearchStruct, error) {
+
+	ctx := context.Background()
+	err := Conn.PingContext(ctx)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	log.Printf("Connected!")
+
+	rows, err := Conn.QueryContext(ctx, "GetAuthor", sql.Named("NameAuthor", sql.Out{Dest: &author}))
+	if err != nil {
+		log.Printf("Error in get author  querycontext!")
+		log.Fatal(err.Error())
+	}
+	var count int
+
+	searchResults := SearchStruct{}
+
+	for rows.Next() {
+		var NameAuthorScan, DescribeAuthorScan string
+		// Get values from row.
+		err := rows.Scan(&NameAuthorScan, &DescribeAuthorScan)
+		if err != nil {
+			log.Fatal("Error scan row: " + err.Error())
+		}
+
+		instanceAuthor := Author{
+			NameAuthor:     NameAuthorScan,
+			DescribeAuthor: DescribeAuthorScan,
+		}
+
+		searchResults, err = SelectBook(w, NameAuthorScan)
+		if err != nil {
+			log.Printf("Error in about author  querycontext!")
+			log.Fatal(err.Error())
+		}
+
+		searchResults.Authors = append(searchResults.Authors, instanceAuthor)
+
+		//fmt.Fprintf(w, "NameBook: %s, NameAuthor: %s\n", NameBook, NameAuthor)
+		count++
+	}
+
+	return searchResults, nil
+}
+
+func AboutBook(w http.ResponseWriter, book string) (SearchStruct, error) {
+
+	ctx := context.Background()
+	err := Conn.PingContext(ctx)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	log.Printf("Connected!")
+
+	rows, err := Conn.QueryContext(ctx, "GetBook", sql.Named("NameBook", sql.Out{Dest: &book}))
+	if err != nil {
+		log.Printf("Error in get book  querycontext!")
+		log.Fatal(err.Error())
+	}
 	var count int
 
 	searchResults := SearchStruct{}
@@ -274,17 +447,3 @@ func AboutBook(w http.ResponseWriter, search string) (SearchStruct, error) {
 
 	return searchResults, nil
 }
-
-// db, err := db.Query("select * from dbo.Formulars")
-// if err != nil {
-// 	log.Fatal("Prepare failed: ", err.Error())
-// }
-// defer stmt.Close()
-
-// row := stmt.QueryRow()
-// var IDBook int
-// err = row.Scan(&IDBook)
-// if err != nil {
-// 	log.Fatal("Scan failed:", err.Error())
-// }
-// fmt.Printf("IDBook:%d\n", IDBook)

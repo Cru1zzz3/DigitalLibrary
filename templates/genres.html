@@ -1,0 +1,30 @@
+{{define "Title"}}Genres{{end}}
+
+
+{{define "content"}}
+<div class="form-block">
+
+    <div>
+        <h1>Genre: {{ range .SearchResults.Genres }} {{ .NameGenre }} {{end}}</h1>
+        <span>{{ range .SearchResults.Genres }} {{ .DescribeGenre }} {{end}}</span>
+
+    </div>
+
+    <table id="example" class="table table-striped table-bordered" cellspacing="0" style="width:100%">
+        <thead>
+            <tr>
+                <th>NameBook</th>
+                <th>NameAuthor</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .SearchResults.Books }}
+            <tr>
+                <td><a href="/books/{{.NameBook}}">{{ .NameBook }} </a> </td>
+                <td><a href="/authors/{{.NameAuthor}}">{{ .NameAuthor }} </a></td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

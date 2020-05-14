@@ -30,12 +30,17 @@ var (
 	store = sessions.NewCookieStore(key)
 )
 
+var TopGenresSlice []string
+
+var PageData Data
+
 type Data struct {
 	Authenticated      bool
 	Nickname           string
 	LoginError         LoginErrors
 	SearchResults      db.SearchStruct
 	RegistrationResult SuccessfullyRegistration
+	TopGenres          []string
 	Other              interface{}
 }
 
@@ -85,11 +90,17 @@ func main() {
 
 		session, _ := store.Get(r, "cookie-name")
 
+		PageData := Data{
+			Authenticated: CheckIfLogin(r),
+			Nickname:      GetNickname(r),
+			TopGenres:     db.GetGenres(w),
+		}
+
 		// Check if user is authenticated
 		if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
 			// If not auth
 
-			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r)})
+			err = t.ExecuteTemplate(w, "index", PageData)
 			if err != nil {
 				log.Fatal("Error in execute index template ", err)
 			}
@@ -99,7 +110,7 @@ func main() {
 
 		// If auth successfull
 
-		err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r)})
+		err = t.ExecuteTemplate(w, "index", PageData)
 		if err != nil {
 			log.Fatal("Error in execute index template ", err)
 		}
@@ -123,8 +134,14 @@ func main() {
 			log.Fatal(err)
 		}
 
+		PageData := Data{
+			Authenticated: CheckIfLogin(r),
+			Nickname:      GetNickname(r),
+			TopGenres:     db.GetGenres(w),
+		}
+
 		if r.Method != http.MethodPost {
-			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r)})
+			err = t.ExecuteTemplate(w, "index", PageData)
 			if err != nil {
 				log.Fatal("Error in execute partnership template", err)
 			}
@@ -169,11 +186,119 @@ func main() {
 		// Print result collection
 		//log.Println(searchResults.NameBook, searchResults.NameAuthor)
 
-		err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), SearchResults: searchResults})
+		PageData := Data{
+			Authenticated: CheckIfLogin(r),
+			Nickname:      GetNickname(r),
+			TopGenres:     db.GetGenres(w),
+			SearchResults: searchResults,
+		}
+
+		err = t.ExecuteTemplate(w, "index", PageData)
 		if err != nil {
 			log.Fatal("Error search template execute", err)
 		}
 
+	})
+
+	r.HandleFunc("/genres", func(w http.ResponseWriter, r *http.Request) {
+
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+			"../templates/allgenres.html",
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		searchResults := db.GetAllGenres(w)
+		if err != nil {
+			log.Fatal("Error in search all genres query", err)
+		}
+
+		err = t.ExecuteTemplate(w, "index", Data{
+			Authenticated: CheckIfLogin(r),
+			Nickname:      GetNickname(r),
+			TopGenres:     db.GetGenres(w),
+			SearchResults: searchResults},
+		)
+		if err != nil {
+			log.Fatal("Error search template execute", err)
+		}
+
+		// fmt.Fprintf(w, "You've requested the genre: %s\n", namegenre)
+		// fmt.Fprintf(w, "Your result: %s\n", searchResults)
+	})
+
+	r.HandleFunc("/genres/{namegenre}", func(w http.ResponseWriter, r *http.Request) {
+
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+			"../templates/genres.html",
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		vars := mux.Vars(r)
+		namegenre := vars["namegenre"]
+
+		searchResults, err := db.AboutGenre(w, namegenre)
+		if err != nil {
+			log.Fatal("Error in search info about book query", err)
+		}
+
+		err = t.ExecuteTemplate(w, "index", Data{
+			Authenticated: CheckIfLogin(r),
+			Nickname:      GetNickname(r),
+			TopGenres:     db.GetGenres(w),
+			SearchResults: searchResults},
+		)
+		if err != nil {
+			log.Fatal("Error search template execute", err)
+		}
+
+		// fmt.Fprintf(w, "You've requested the genre: %s\n", namegenre)
+		// fmt.Fprintf(w, "Your result: %s\n", searchResults)
+	})
+
+	r.HandleFunc("/authors/{nameauthor}", func(w http.ResponseWriter, r *http.Request) {
+
+		files := []string{
+			"../templates/index.html",
+			"../templates/navbar.html",
+			"../templates/authors.html",
+		}
+
+		t, err := template.ParseFiles(files...)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		vars := mux.Vars(r)
+		nameauthor := vars["nameauthor"]
+
+		searchResults, err := db.AboutAuthor(w, nameauthor)
+		if err != nil {
+			log.Fatal("Error in search info about author query", err)
+		}
+
+		err = t.ExecuteTemplate(w, "index", Data{
+			Authenticated: CheckIfLogin(r),
+			Nickname:      GetNickname(r),
+			TopGenres:     db.GetGenres(w),
+			SearchResults: searchResults})
+		if err != nil {
+			log.Fatal("Error search template execute", err)
+		}
+
+		// fmt.Fprintf(w, "You've requested the author: %s\n", nameauthor)
+		// fmt.Fprintf(w, "Your result: %s\n", searchResults)
 	})
 
 	r.HandleFunc("/books/{namebook}", func(w http.ResponseWriter, r *http.Request) {
@@ -181,6 +306,7 @@ func main() {
 		files := []string{
 			"../templates/index.html",
 			"../templates/navbar.html",
+			"../templates/books.html",
 		}
 
 		t, err := template.ParseFiles(files...)
@@ -196,13 +322,17 @@ func main() {
 			log.Fatal("Error in search info about book query", err)
 		}
 
-		err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), SearchResults: searchResults})
+		err = t.ExecuteTemplate(w, "index", Data{
+			Authenticated: CheckIfLogin(r),
+			Nickname:      GetNickname(r),
+			TopGenres:     db.GetGenres(w),
+			SearchResults: searchResults})
 		if err != nil {
 			log.Fatal("Error search template execute", err)
 		}
 
-		fmt.Fprintf(w, "You've requested the book: %s\n", namebook)
-		fmt.Fprintf(w, "Your result: %s\n", searchResults)
+		// fmt.Fprintf(w, "You've requested the book: %s\n", namebook)
+		// fmt.Fprintf(w, "Your result: %s\n", searchResults)
 	})
 
 	r.HandleFunc("/registration", func(w http.ResponseWriter, r *http.Request) {
@@ -226,8 +356,14 @@ func main() {
 			log.Fatal(err)
 		}
 
+		PageData := Data{
+			Authenticated: CheckIfLogin(r),
+			Nickname:      GetNickname(r),
+			TopGenres:     db.GetGenres(w),
+		}
+
 		if r.Method != http.MethodPost {
-			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), RegistrationResult: SuccessfullyRegistration{Success: false}})
+			err = t.ExecuteTemplate(w, "index", PageData)
 			if err != nil {
 				log.Fatal("Error in execute registration template", err)
 			}
@@ -241,7 +377,14 @@ func main() {
 			Password: r.FormValue("Password"),
 		}
 
-		err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), RegistrationResult: SuccessfullyRegistration{Success: true}})
+		PageData = Data{
+			Authenticated:      CheckIfLogin(r),
+			Nickname:           GetNickname(r),
+			RegistrationResult: SuccessfullyRegistration{Success: true},
+			TopGenres:          db.GetGenres(w),
+		}
+
+		err = t.ExecuteTemplate(w, "index", PageData)
 		if err != nil {
 			log.Fatal("Error in execute registration template", err)
 		}
@@ -311,10 +454,16 @@ func main() {
 
 		loginPageData := loginPage{}
 
+		PageData := Data{
+			Authenticated: CheckIfLogin(r),
+			Nickname:      GetNickname(r),
+			TopGenres:     db.GetGenres(w),
+		}
+
 		// Will continue if submit button will be pressed!
 		if r.Method != http.MethodPost {
 
-			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r)})
+			err = t.ExecuteTemplate(w, "index", PageData)
 			if err != nil {
 				log.Fatal("Error search template execute", err)
 			}
@@ -348,7 +497,14 @@ func main() {
 
 		if !registered {
 
-			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), LoginError: LoginErrors{true, false}})
+			PageData = Data{
+				Authenticated: CheckIfLogin(r),
+				Nickname:      GetNickname(r),
+				TopGenres:     db.GetGenres(w),
+				LoginError:    LoginErrors{true, false},
+			}
+
+			err = t.ExecuteTemplate(w, "index", PageData)
 			if err != nil {
 				log.Fatal("Error in user not registered message", err)
 			}
@@ -358,7 +514,14 @@ func main() {
 			if err != nil {
 				log.Println("Error in compare hashing", err)
 
-				err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), LoginError: LoginErrors{false, true}})
+				PageData = Data{
+					Authenticated: CheckIfLogin(r),
+					Nickname:      GetNickname(r),
+					TopGenres:     TopGenresSlice,
+					LoginError:    LoginErrors{false, true},
+				}
+
+				err = t.ExecuteTemplate(w, "index", PageData)
 				if err != nil {
 					log.Fatal("Error in user not registered message", err)
 				}
@@ -371,7 +534,14 @@ func main() {
 			session.Values["nickname"] = loginPageData.Nickname
 			session.Save(r, w)
 
-			err = t.ExecuteTemplate(w, "index", Data{Authenticated: CheckIfLogin(r), Nickname: GetNickname(r), LoginError: LoginErrors{false, false}})
+			PageData = Data{
+				Authenticated: CheckIfLogin(r),
+				Nickname:      GetNickname(r),
+				TopGenres:     db.GetGenres(w),
+				LoginError:    LoginErrors{false, false},
+			}
+
+			err = t.ExecuteTemplate(w, "index", PageData)
 			if err != nil {
 				log.Fatal("Error in user non error registered message", err)
 			}

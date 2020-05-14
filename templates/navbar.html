@@ -7,8 +7,14 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 
-
 {{end}}
+
+{{ define "topgenres"}}
+{{ range .TopGenres }}
+<a class="dropdown-item" href="/genres/{{ . }} "> {{ . }} </a>
+{{ end }}
+{{end}}
+
 
 {{define "navbar"}}
 <!-- NavBar -->
@@ -54,15 +60,17 @@
 
             <!-- Genres dropdown -->
             <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
+                <a class="nav-link dropdown-toggle" href="/genres" id="navbarDropdown" role="button"
+                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                     Genres
                 </a>
                 <div class="dropdown-menu" aria-labelledby="navbarDropdown">
 
-                    <a class="dropdown-item" href="#"></a>
+                    <!-- Top genres dropdown -->
+                    {{ template "topgenres" . }}
+
                     <div class="dropdown-divider"></div>
-                    <a class="dropdown-item" href="#">Something else here</a>
+                    <a class="dropdown-item" href="/genres">More genres...</a>
                 </div>
             </li>
 
@@ -79,7 +87,4 @@
 
     </div>
 </nav>
-
-
-
 {{end}}

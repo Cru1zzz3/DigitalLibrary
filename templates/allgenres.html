@@ -1,0 +1,28 @@
+{{define "Title"}}All Genres{{end}}
+
+
+{{define "content"}}
+<div class="form-block">
+
+    <div>
+        <h1>We have these genres:</h1>
+    </div>
+
+    <table id="example" class="table table-striped table-bordered" cellspacing="0" style="width:100%">
+        <thead>
+            <tr>
+                <th>NameGenre</th>
+                <th>DescribeGenre</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .SearchResults.Genres }}
+            <tr>
+                <td><a href="/genres/{{.NameGenre}}">{{ .NameGenre }} </a> </td>
+                <td>{{ .DescribeGenre }} </td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+{{end}}

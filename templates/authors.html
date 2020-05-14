@@ -1,0 +1,28 @@
+{{define "Title"}}Authors{{end}}
+
+
+{{define "content"}}
+<div class="form-block">
+
+    <div>
+        <h1>Author: {{ range .SearchResults.Authors }} {{ .NameAuthor }} {{end}}</h1>
+        <h3>DescribeAuthor: {{ range .SearchResults.Authors}} {{.DescribeAuthor}} {{end}} </h3>
+    </div>
+
+    <table id="example" class="table table-striped table-bordered" cellspacing="0" style="width:100%">
+        <thead>
+            <tr>
+                <th>Books</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{ range .SearchResults.Books }}
+            <tr>
+                <td><a href="/books/{{.NameBook}}">{{ .NameBook }} </a></td>
+            </tr>
+            {{end}}
+        </tbody>
+    </table>
+</div>
+
+{{end}}

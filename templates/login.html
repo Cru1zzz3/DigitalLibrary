@@ -1,22 +1,20 @@
 {{define "title"}}Login page{{end}}
 
-{{define "head"}}
-<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
-    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-
-{{end}}
-
 {{ define "content"}}
-<form method="POST">
-    <div class="form-group">
-        <label for="Nickname">Nickname:</label>
-        <input type="text" class="form-control" id="Nickname" name="Nickname" placeholder="Enter nickname">
-        <small class="form-text text-muted"> You can undertext this :) </small>
-    </div>
-    <div class="form-group">
-        <label for="Password">Password</label>
-        <input type="password" class="form-control" id="Password" name="Password" placeholder="Password">
-    </div>
-    <button type="submit" class="btn btn-primary">Submit</button>
-</form>
+<div class="form-block">
+    <form method="POST">
+        <div class="form-group">
+            <label for="Nickname">Nickname:</label>
+            <input type="text" class="form-control" id="Nickname" name="Nickname" placeholder="Enter nickname">
+            <small class="form-text text-muted"> You can undertext this :) </small>
+        </div>
+        <div class="form-group">
+            <label for="Password">Password</label>
+            <input type="password" class="form-control" id="Password" name="Password" placeholder="Password">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+
+</div>
+
 {{end}}
